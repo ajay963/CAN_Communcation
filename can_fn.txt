@@ -1,0 +1,89 @@
+// // sender node 01
+
+#include <SPI.h>
+#include <mcp2515.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#define NewLine Serial.print("\n");
+
+LiquidCrystal_I2C lcd(0x3F, 16, 2);
+struct can_frame canMsgA;
+struct can_frame syncMsg;
+
+MCP2515 mcp2515(53);
+
+struct CAN_Mssg {
+  uint32_t id;   // 32-bit unsigned integer for CAN ID
+  uint8_t value; // 8-bit unsigned integer for data byte
+};
+
+// This function reads a CAN message and returns it
+can_frame receiveCANMssg() {
+  if (mcp2515.readMessage(&syncMsg) == MCP2515::ERROR_OK) {
+    Serial.print("ID: ");
+    Serial.print(syncMsg.can_id, HEX); // print ID in HEX
+    Serial.print(" ");
+    Serial.print("Data 01: ");
+    Serial.print(syncMsg.data[1]);
+    NewLine;
+  }
+  return syncMsg; // Always return the current canMsg (even if not updated)
+}
+
+void lcd_setup() {
+  lcd.init();         // Initialize LCD
+  lcd.backlight();    // Turn on backlight
+  lcd.setCursor(0, 0);
+  lcd.print("Initiating CAN");
+}
+
+void lcdDisplayData(const CAN_Mssg &mssg) {
+  Serial.print("Stored Value: ");
+  Serial.println(mssg.value);
+  Serial.print("Stored ID: ");
+  Serial.println(mssg.id, HEX);
+  NewLine;
+  
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("ID: ");
+  lcd.print(mssg.id, HEX);  
+  lcd.setCursor(0, 1);
+  lcd.print("Val: ");
+  lcd.print(mssg.value);
+  
+  delay(200);
+}
+
+void setup() {
+  Serial.begin(9600);
+  lcd_setup();
+  mcp2515.reset();
+  mcp2515.setBitrate(CAN_125KBPS);
+  mcp2515.setNormalMode();
+  delay(400);
+}
+
+void loop() {
+  // Read a CAN message from the MCP2515
+  receiveCANMssg();
+  
+  // Transfer values into our CAN_Mssg struct
+
+  canMssgA.can_id = 0x100;
+  canMssgA.data = 99;
+  
+
+    if (data.can_id == 0x00) {  // Check for SYNC message
+            Serial.println("SYNC received, waiting 50ms...");
+            delay(50); // Small delay before sending
+            
+            if (mcp2515.sendMessage(can_A) == MCP2515::ERROR_OK)
+                Serial.println("Node A sent message");
+            else
+                Serial.println("Node A failed to send");
+    }
+  // Display the data on the LCD
+
+}
